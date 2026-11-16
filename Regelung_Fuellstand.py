@@ -135,7 +135,7 @@ def _(alt, deque, math, mo, np, pd, slh0):
         k=None,
         k_Q=None,
         tau=1.0,
-        t_end=5,
+        t_end=2,
         dt=0.001,
         setpoint=3.0,
         h_max=6.0,
@@ -532,7 +532,7 @@ def _(mo, vstack_kd, vstack_ki, vstack_kp):
 
 @app.cell
 def _(mo):
-    slte = mo.ui.slider(1, 10, 0.5, value=5.0, label="Dauer (h)")
+    slte = mo.ui.slider(1, 10, 0.5, value=2.0, label="Dauer (h)")
     return (slte,)
 
 
