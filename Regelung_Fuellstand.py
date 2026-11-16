@@ -27,7 +27,7 @@ def regelstrecke(t, x, y, k, Q_ab, tau):
         y   : Zufluss / Stellgröße (m³/h)
         k   : Verstärkung = 1 / Beckenfläche (1/m²)
         Q_ab: Abfluss (m³/h)
-        tau : Zeitkonstante des PT1-Glieds (h)
+        tau : Normierungsfaktor (hier 1)
 
     Rückgabe:
         Änderungsrate dx/dt (m/h)
@@ -119,18 +119,22 @@ def _(alt, deque, math, mo, np, pd, slh0):
     # ================================================================
     # Anlagenparameter (didaktisch optimiert)
     # ================================================================
-    DY_MAX = 200.0   # Max. Stellgroessenaenderung (m3/h pro h)
+    # Ausgleichsbecken Klaeranlage Schwierbach (50.000 EW, Q_TW ca. 500 m3/h)
+    D_BECKEN = 12.6                          # Beckendurchmesser (m)
+    A_BECKEN = math.pi / 4 * D_BECKEN ** 2   # Grundflaeche ca. 125 m2
+    Q_AP = 500.0     # Arbeitspunkt Zulaufpumpe (m3/h), max. 3 * Q_AP
+    DY_MAX = 5000.0  # Max. Stellgroessenaenderung (m3/h pro h)
     T_F = 0.5        # Filterzeitkonstante D-Anteil (h)
     T_DEAD = 0.10    # Totzeit (h)
-    C_AB = 3.0       # Abflusskoeffizient
+    C_AB = 75.0      # Abflusskoeffizient Bodenablauf: Q_ab = C_AB * sqrt(2 g h) in m3/h
 
     def simulate(
         k_p,
         k_i,
         k_d,
-        k=1.0,
-        k_Q=20.0,
-        tau=5.0,
+        k=None,
+        k_Q=None,
+        tau=1.0,
         t_end=5,
         dt=0.001,
         setpoint=3.0,
@@ -147,6 +151,10 @@ def _(alt, deque, math, mo, np, pd, slh0):
             -> y_R < 0  : Pumpe laeuft langsamer (bis aus)
             Begrenzung: 0 <= y_phys <= 3*k_Q
         """
+        if k is None:
+            k = 1.0 / A_BECKEN
+        if k_Q is None:
+            k_Q = Q_AP
         t_vals = np.arange(0, t_end, dt)
         x_vals = []
         y_vals = []
@@ -433,7 +441,7 @@ def _(alt, deque, math, mo, np, pd, slh0):
 @app.cell
 def _(mo):
     mo.md("""
-    # Fuellstandsregelung fuer ein Rundbecken
+    # Fuellstandsregelung Ausgleichsbecken – Klaeranlage Schwierbach
     """)
     return
 
@@ -442,6 +450,9 @@ def _(mo):
 def _(mo):
     mo.md("""
     ## Vorgaben
+    - **Ausgleichsbecken:** Rundbecken, Durchmesser 12,6 m (ca. 125 m²)
+    - **Zulaufpumpe:** Arbeitspunkt 500 m³/h, max. 1.500 m³/h (FU)
+    - **Ablauf:** Bodenablauf zur Belebung, abhaengig vom Wasserstand
     - **Maximaler Fuellstand:** 6 m
     - **Mindestfuellstand:** 0,5 m
     - **Regelgroesse:** Wasserstand im Becken
@@ -537,9 +548,9 @@ def _(simulate, slk_d, slk_i, slk_p, slte, slw):
         k_p=slk_p.value,
         k_i=slk_i.value,
         k_d=slk_d.value,
-        k=1.0,
-        k_Q=20.0,
-        tau=5.0,
+        k=None,
+        k_Q=None,
+        tau=1.0,
         t_end=slte.value,
         dt=0.001,
         setpoint=slw.value,
